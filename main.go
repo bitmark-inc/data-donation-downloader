@@ -188,8 +188,14 @@ func getEncryptedFile(bitmarkId, token string) ([]byte, error) {
 
 func main() {
 	seed := ""
+	datadir := ""
 	flag.StringVar(&seed, "account", "", "Bitmark Account")
+	flag.StringVar(&datadir, "data-dir", "", "Directory to store all data")
 	flag.Parse()
+
+	if datadir == "" {
+		datadir = "data"
+	}
 
 	if seed == "" {
 		log.Fatal("invalid account")
@@ -310,9 +316,10 @@ func main() {
 		}
 
 		for _, srcFile := range unzipper.File {
-			os.MkdirAll(bmk.Id, 0755)
+			datapath := filepath.Join(datadir, bmk.Id)
+			os.MkdirAll(datapath, 0755)
 
-			p := filepath.Join(bmk.Id, srcFile.Name)
+			p := filepath.Join(datapath, srcFile.Name)
 			if srcFile.FileInfo().IsDir() {
 				os.MkdirAll(p, srcFile.Mode())
 			} else {
