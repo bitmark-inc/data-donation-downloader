@@ -69,11 +69,15 @@ type Bitmark struct {
 }
 
 func NewSeedFromHexString(seed string) ([32]byte, error) {
+	rootSeed := [32]byte{}
 	b, err := hex.DecodeString(seed)
 	if err != nil {
-		return [32]byte{}, err
+		return rootSeed, err
 	}
-	rootSeed := [32]byte{}
+
+	if len(b) != 32 {
+		return rootSeed, fmt.Errorf("invalid length of bitmark account")
+	}
 	copy(rootSeed[:], b[:32])
 	return rootSeed, nil
 }
