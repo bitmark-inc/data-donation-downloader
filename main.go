@@ -14,7 +14,6 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -253,10 +252,7 @@ func main() {
 			continue
 		}
 
-		sort.Slice(bmk.Provenance, func(i, j int) bool {
-			return bmk.Provenance[i].CreatedAt >= bmk.Provenance[j].CreatedAt
-		})
-
+		// The items of the provenance is in descending order
 		senderAccountNo := bmk.Provenance[1].Owner
 
 		// Get encryption key
