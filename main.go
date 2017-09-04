@@ -41,8 +41,8 @@ var (
 )
 
 var (
-	bitmarkApiUrl     = "https://api.devel.bitmark.com"
-	bitmarkStorageUrl = "https://storage.devel.bitmark.com"
+	bitmarkApiUrl     = ""
+	bitmarkStorageUrl = ""
 )
 
 type TokenReqBody struct {
@@ -194,12 +194,23 @@ func main() {
 
 	seed := ""
 	datadir := ""
+	network := ""
 	flag.StringVar(&seed, "account", "", "Bitmark Account")
-	flag.StringVar(&datadir, "data-dir", "", "Directory to store all data")
+	flag.StringVar(&network, "network", "", "Network")
+	flag.StringVar(&datadir, "data-dir", "data", "Directory to store all data")
 	flag.Parse()
 
-	if datadir == "" {
-		datadir = "data"
+	log.Printf("Network: %s", strings.ToUpper(network))
+	switch network {
+	case "devel":
+		bitmarkApiUrl = "https://api.devel.bitmark.com"
+		bitmarkStorageUrl = "https://storage.devel.bitmark.com"
+	case "test":
+		bitmarkApiUrl = "https://api.test.bitmark.com"
+		bitmarkStorageUrl = "https://storage.test.bitmark.com"
+	default:
+		bitmarkApiUrl = "https://api.bitmark.com"
+		bitmarkStorageUrl = "https://storage.live.bitmark.com"
 	}
 
 	if seed == "" {
@@ -224,7 +235,7 @@ func main() {
 	log.Printf("Enc Public Key: %s", strings.ToUpper(hex.EncodeToString(encKeyPair.PublicKey[:])))
 
 	// fetch all bitmarks belong to the account
-	regClient, err := registry.New("https://api.devel.bitmark.com")
+	regClient, err := registry.New(bitmarkApiUrl)
 	if err != nil {
 		log.Fatalf("can not create a registry client: %s", err.Error())
 	}
