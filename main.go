@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -21,6 +20,7 @@ import (
 	"github.com/bitmark-inc/go-bitmarklib"
 	"github.com/btcsuite/golangcrypto/nacl/secretbox"
 	"github.com/lemonlatte/go-registry"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ed25519"
 )
 
@@ -190,6 +190,8 @@ func getEncryptedFile(bitmarkId, token string) ([]byte, error) {
 }
 
 func main() {
+	log.SetFormatter(&log.TextFormatter{FullTimestamp: true})
+
 	seed := ""
 	datadir := ""
 	flag.StringVar(&seed, "account", "", "Bitmark Account")
@@ -206,7 +208,7 @@ func main() {
 
 	rootSeed, err := NewSeedFromHexString(seed)
 	if err != nil {
-		log.Fatal("Fail to generate root seed")
+		log.Fatalf("Fail to generate root seed: %s", err.Error())
 	}
 
 	authSeed := secretbox.Seal([]byte{}, authSeedCountBM[:], &seedNonce, &rootSeed)
@@ -236,10 +238,15 @@ func main() {
 		log.Fatalf("fail to decode registry data: %s", err.Error())
 	}
 
+	if len(bitmarks) == 0 {
+		log.Println("No data found")
+		return
+	}
+
 	// for each possible bitmarks, download and extract it.
+	log.Println("Start fetching donor data...")
 	for _, bmk := range bitmarks {
-		log.Println("Start downloading and unarchiving donor data.")
-		log.Printf("Id: %s", bmk.Id)
+		log.Printf("Get data with bitmark id: %s", bmk.Id)
 		// FIXME: remove the additional request if
 		// the registery supports `previous_owner` in the future
 		b, err := regClient.GetBitmark(bmk.Id, false, true)
@@ -269,13 +276,13 @@ func main() {
 		// Get session data
 		sessionData, err := getSessionData(bmk.Id, bmk.Owner)
 		if err != nil {
-			log.Printf("fail to request session data. error: %s", err.Error())
+			log.Warnf("fail to request session data. error: %s", err.Error())
 			continue
 		}
 
 		senderPubKey, err := bitmarklib.NewPublicKey(util.FromBase58(senderAccountNo))
 		if err != nil {
-			log.Printf("fail to generate sender public key: %s", err.Error())
+			log.Warnf("fail to generate sender public key: %s", err.Error())
 			continue
 		}
 
@@ -284,19 +291,19 @@ func main() {
 			&senderEncPubKey, encKeyPair.PrivateKey,
 			senderPubKey.PublicKeyBytes())
 		if err != nil {
-			log.Printf("unable to decrypt session data: %s", err.Error())
+			log.Warnf("unable to decrypt session data: %s", err.Error())
 			continue
 		}
 
 		token, err := getStorageAccessToken(authKeyPair)
 		if err != nil {
-			log.Printf("unable to get storage token: %s", err.Error())
+			log.Warnf("unable to get storage token: %s", err.Error())
 			continue
 		}
 
 		encryptedFileBytes, err := getEncryptedFile(bmk.Id, token)
 		if err != nil {
-			log.Printf("unable to get donor data: %s", err.Error())
+			log.Warnf("unable to get donor data: %s", err.Error())
 			continue
 		}
 
@@ -304,7 +311,7 @@ func main() {
 		donorData, err := bitmarklib.DecryptAssetFile(encryptedFileBytes, sessionKey,
 			senderPubKey.PublicKeyBytes())
 		if err != nil {
-			log.Printf("unable to decrypt donor data: %s", err.Error())
+			log.Warnf("unable to decrypt donor data: %s", err.Error())
 			continue
 		}
 
@@ -340,6 +347,5 @@ func main() {
 				sf.Close()
 			}
 		}
-		log.Printf("File saved.")
 	}
 }
