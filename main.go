@@ -207,10 +207,10 @@ func main() {
 		bitmarkStorageUrl = "https://storage.devel.bitmark.com"
 	case "test":
 		bitmarkApiUrl = "https://api.test.bitmark.com"
-		bitmarkStorageUrl = "https://storage.test.bitmark.com"
+		bitmarkStorageUrl = "https://assets.test.bitmark.com"
 	default:
 		bitmarkApiUrl = "https://api.bitmark.com"
-		bitmarkStorageUrl = "https://storage.live.bitmark.com"
+		bitmarkStorageUrl = "https://assets.bitmark.com"
 	}
 
 	if seed == "" {
