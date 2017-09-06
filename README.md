@@ -1,21 +1,21 @@
-# Donor Data Downloader
+# Data Donation Downloader
 
 A downloader for data donation
 
 ### Usage
 
 ```
-$ doner-data-downloader -network <netowrk> -account <bitmark_account> [-init]
+$ data-donation-downloader -network <netowrk> -account <bitmark_account> [-init]
 ```
 
 For downloading data:
 
 ```
-$ doner-data-downloader -account <bitmark_account>
+$ data-donation-downloader -account <bitmark_account>
 ```
 
 For initializing an account:
 
 ```
-$ doner-data-downloader -account <bitmark_account> -init
+$ data-donation-downloader -account <bitmark_account> -init
 ```
