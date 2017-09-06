@@ -18,10 +18,10 @@ import (
 
 	"github.com/bitmark-inc/bitmarkd/util"
 	"github.com/bitmark-inc/go-bitmarklib"
-	"github.com/btcsuite/golangcrypto/nacl/secretbox"
 	"github.com/lemonlatte/go-registry"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ed25519"
+	"golang.org/x/crypto/nacl/secretbox"
 )
 
 var (
@@ -279,7 +279,9 @@ func main() {
 		log.Fatalf("Fail to generate account key: %s", err.Error())
 	}
 	log.Printf("Auth Account: %s", authKeyPair.Account().String())
-	encKeyPair, err := bitmarklib.NewEncrKeyPairFromSeed(rootSeed[:])
+
+	encSeed := secretbox.Seal([]byte{}, encrSeedCountBM[:], &seedNonce, &rootSeed)
+	encKeyPair, err := bitmarklib.NewEncrKeyPairFromSeed(encSeed[:])
 	if err != nil {
 		log.Fatalf("Fail to generate encryption key: %s", err.Error())
 	}
