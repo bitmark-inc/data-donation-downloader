@@ -40,6 +40,8 @@ var (
 	}
 )
 
+var version = "X.x"
+
 var (
 	bitmarkApiUrl     = ""
 	bitmarkStorageUrl = ""
@@ -230,14 +232,21 @@ func main() {
 	log.SetFormatter(&log.TextFormatter{FullTimestamp: true})
 
 	init := false
+	showVersion := false
 	seed := ""
 	datadir := ""
 	network := ""
 	flag.BoolVar(&init, "init", false, "initialize the bitmark")
+	flag.BoolVar(&showVersion, "version", false, "show version number")
 	flag.StringVar(&seed, "account", "", "Bitmark Account")
 	flag.StringVar(&network, "network", "", "Network")
 	flag.StringVar(&datadir, "data-dir", "data", "Directory to store all data")
 	flag.Parse()
+
+	if showVersion {
+		fmt.Println(version)
+		return
+	}
 
 	log.Printf("Network: %s", strings.ToUpper(network))
 	inTest := false
