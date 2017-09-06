@@ -82,6 +82,43 @@ func NewSeedFromHexString(seed string) ([32]byte, error) {
 	return rootSeed, nil
 }
 
+func registerEncKey(authKey *bitmarklib.KeyPair, encKey *bitmarklib.EncrKeyPair) error {
+	accountNo := authKey.Account().String()
+	signatureOrigin := ed25519.Sign(authKey.PrivateKeyBytes(), encKey.PublicKey[:])
+	signature := hex.EncodeToString(signatureOrigin)
+
+	encKeyUrl := fmt.Sprintf("%s/v1/encryption_keys/%s", bitmarkApiUrl, accountNo)
+
+	encryptPubKey := hex.EncodeToString(encKey.PublicKey[:])
+
+	req := map[string]string{
+		"encryption_pubkey": encryptPubKey,
+		"signature":         signature,
+	}
+
+	var buf bytes.Buffer
+	e := json.NewEncoder(&buf)
+	err := e.Encode(req)
+	if err != nil {
+		return err
+	}
+
+	log.Println("Check the encryption key here: ", encKeyUrl)
+	resp, err := http.Post(encKeyUrl, "application/json", &buf)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		body := map[string]string{}
+		d := json.NewDecoder(resp.Body)
+		d.Decode(&body)
+		return fmt.Errorf(body["message"])
+	}
+	return nil
+}
+
 func getEncryptionKey(accountNo string) ([32]byte, error) {
 	encKey := [32]byte{}
 
@@ -192,22 +229,27 @@ func getEncryptedFile(bitmarkId, token string) ([]byte, error) {
 func main() {
 	log.SetFormatter(&log.TextFormatter{FullTimestamp: true})
 
+	init := false
 	seed := ""
 	datadir := ""
 	network := ""
+	flag.BoolVar(&init, "init", false, "initialize the bitmark")
 	flag.StringVar(&seed, "account", "", "Bitmark Account")
 	flag.StringVar(&network, "network", "", "Network")
 	flag.StringVar(&datadir, "data-dir", "data", "Directory to store all data")
 	flag.Parse()
 
 	log.Printf("Network: %s", strings.ToUpper(network))
+	inTest := false
 	switch network {
 	case "devel":
 		bitmarkApiUrl = "https://api.devel.bitmark.com"
 		bitmarkStorageUrl = "https://storage.devel.bitmark.com"
+		inTest = true
 	case "test":
 		bitmarkApiUrl = "https://api.test.bitmark.com"
 		bitmarkStorageUrl = "https://assets.test.bitmark.com"
+		inTest = true
 	default:
 		bitmarkApiUrl = "https://api.bitmark.com"
 		bitmarkStorageUrl = "https://assets.bitmark.com"
@@ -223,7 +265,7 @@ func main() {
 	}
 
 	authSeed := secretbox.Seal([]byte{}, authSeedCountBM[:], &seedNonce, &rootSeed)
-	authKeyPair, err := bitmarklib.NewKeyPairFromSeed(authSeed, true, bitmarklib.ED25519)
+	authKeyPair, err := bitmarklib.NewKeyPairFromSeed(authSeed, inTest, bitmarklib.ED25519)
 	if err != nil {
 		log.Fatalf("Fail to generate account key: %s", err.Error())
 	}
@@ -233,6 +275,16 @@ func main() {
 		log.Fatalf("Fail to generate encryption key: %s", err.Error())
 	}
 	log.Printf("Enc Public Key: %s", strings.ToUpper(hex.EncodeToString(encKeyPair.PublicKey[:])))
+
+	if init {
+		err := registerEncKey(authKeyPair, encKeyPair)
+		if err != nil {
+			log.Errorf("can not register encryption key: %s", err.Error())
+		} else {
+			log.Info("account registered")
+		}
+		return
+	}
 
 	// fetch all bitmarks belong to the account
 	regClient, err := registry.New(bitmarkApiUrl)
