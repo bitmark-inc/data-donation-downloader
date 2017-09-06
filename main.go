@@ -386,7 +386,7 @@ func main() {
 		}
 
 		for _, srcFile := range unzipper.File {
-			datapath := filepath.Join(datadir, bmk.Id)
+			datapath := filepath.Join(datadir, bmk.Issuer, bmk.Id)
 			os.MkdirAll(datapath, 0755)
 
 			p := filepath.Join(datapath, srcFile.Name)
