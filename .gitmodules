@@ -1,0 +1,15 @@
+[submodule "vendor/github.com/bitmark-inc/bitmarkd"]
+	path = vendor/github.com/bitmark-inc/bitmarkd
+	url = https://github.com/bitmark-inc/bitmarkd
+[submodule "vendor/github.com/bitmark-inc/go-bitmarklib"]
+	path = vendor/github.com/bitmark-inc/go-bitmarklib
+	url = https://github.com/bitmark-inc/go-bitmarklib
+[submodule "vendor/golang.org/x/crypto"]
+	path = vendor/golang.org/x/crypto
+	url = https://go.googlesource.com/crypto
+[submodule "vendor/github.com/lemonlatte/go-registry"]
+	path = vendor/github.com/lemonlatte/go-registry
+	url = https://github.com/lemonlatte/go-registry
+[submodule "vendor/github.com/sirupsen/logrus"]
+	path = vendor/github.com/sirupsen/logrus
+	url = https://github.com/sirupsen/logrus
