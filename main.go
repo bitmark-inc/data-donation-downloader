@@ -332,13 +332,15 @@ func main() {
 		if err != nil {
 			log.Fatalf("fail to decode registry data: %s", err.Error())
 		}
-		if bmk.Owner == bmk.Issuer {
-			log.Printf("omit bitmark id: %s. I am the issuer", bmk.Id)
-			continue
-		}
 
-		// The items of the provenance is in descending order
-		senderAccountNo := bmk.Provenance[1].Owner
+		var senderAccountNo string
+		if bmk.Owner == bmk.Issuer {
+			log.Info("The bitmark belongs to its issuer")
+			senderAccountNo = bmk.Provenance[len(bmk.Provenance)-1].Owner
+		} else {
+			// The items of the provenance is in descending order
+			senderAccountNo = bmk.Provenance[1].Owner
+		}
 
 		// Get encryption key
 		senderEncPubKey, err := getEncryptionKey(senderAccountNo)
