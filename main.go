@@ -15,15 +15,12 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	sdk "github.com/bitmark-inc/bitmark-sdk-go"
 )
 
 var version = "X.x"
-
-var (
-	bitmarkApiUrl = ""
-)
 
 var offsetFile = ".offset"
 
@@ -53,15 +50,6 @@ func main() {
 
 	log.Println("Network:", strings.ToUpper(network))
 
-	switch network {
-	case "devel":
-		bitmarkApiUrl = "https://api.devel.bitmark.com"
-	case "test":
-		bitmarkApiUrl = "https://api.test.bitmark.com"
-	default:
-		bitmarkApiUrl = "https://api.bitmark.com"
-	}
-
 	if seed == "" {
 		log.Fatalln("invalid account")
 	}
@@ -76,6 +64,17 @@ func main() {
 	} else {
 		n = 1
 	}
+
+	cfg := &sdk.Config{
+		HTTPClient: &http.Client{Timeout: 30 * time.Second}, // For downloading large assets
+		Network:    n,
+	}
+
+	if network == "devel" {
+		cfg.APIEndpoint = "https://api.devel.bitmark.com"
+		cfg.KeyEndpoint = "https://key.assets.devel.bitmark.com"
+	}
+	client := sdk.NewClient(cfg)
 
 	account, err := sdk.AccountFromCore(n, core)
 	if err != nil {
@@ -92,7 +91,7 @@ func main() {
 		savedOffset = readFirstOffset(accountPath)
 
 		// Fetch available assets from API server
-		url := bitmarkApiUrl + "/v1/bitmarks?pending=false&owner=" + account.AccountNumber()
+		url := cfg.APIEndpoint + "/v1/bitmarks?pending=false&owner=" + account.AccountNumber()
 		if lastOffset > 0 {
 			url = url + "&at=" + strconv.Itoa(lastOffset)
 		}
@@ -129,15 +128,15 @@ func main() {
 			}
 
 			log.Printf("%d/%d Downloading bitmark: %s", i+1, totalBitmarks, bitmark.ID)
-			downloadBitmark(account, bitmark, datadir)
+			downloadBitmark(client, account, bitmark, datadir)
 		}
 	}
 Done:
 	log.Println("Done")
 }
 
-func downloadBitmark(account *sdk.Account, b bitmark, datadir string) {
-	_, assetBytes, err := account.DownloadAsset(b.ID)
+func downloadBitmark(client *sdk.Client, account *sdk.Account, b bitmark, datadir string) {
+	_, assetBytes, err := client.DownloadAsset(account, b.ID)
 	if err != nil {
 		log.Println("Cannot download bitmark data: err:", err)
 	} else {
